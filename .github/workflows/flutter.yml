@@ -2,35 +2,59 @@ name: Build Flutter APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
+      # نسخهٔ سازگار با pubspec تو (Dart < 3)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'
+          channel: stable
+          flutter-version: '3.7.12'   # با constraint: ">=2.17.0 <3.0.0" سازگاره
 
-      - name: Install dependencies
+      # اگر پروژه‌ی اندروید/گرادل وجود نداشت، بساز
+      - name: Ensure Android/iOS folders exist
+        run: |
+          if [ ! -d "android" ]; then
+            flutter create -t app .
+          fi
+
+      - name: Get packages
         run: flutter pub get
 
-      - name: Build APK
+      - name: Build APK (release)
         run: flutter build apk --release
 
-      - name: Upload APK
+      # ✅ نسخه‌ی جدید اکشن آرتیفکت
+      - name: Upload artifact (Actions)
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      # 📦 لینک دانلود پایدار در صفحه‌ی Releases
+      - name: Publish GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          artifacts: build/app/outputs/flutter-apk/app-release.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          replacesArtifacts: true
