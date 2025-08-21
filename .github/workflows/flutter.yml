@@ -19,18 +19,18 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # نسخهٔ سازگار با pubspec (Dart < 3)
+      # Flutter سازگار با pubspec.yaml (Dart 2.x)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: '3.7.12'
 
-      # ✅ فقط پوشه‌ی اندروید/آی‌اواس رو بساز، بدون template
+      # اگه پوشه android پاک شده باشه، دوباره بساز
       - name: Ensure Android/iOS folders exist
         run: |
           if [ ! -d "android" ]; then
-            flutter create .
+            flutter create -t app .
           fi
 
       - name: Get packages
@@ -39,8 +39,8 @@ jobs:
       - name: Build APK (release)
         run: flutter build apk --release
 
-      # ✅ آپلود به صورت artifact
-      - name: Upload artifact (Actions)
+      # آپلود فایل APK به عنوان artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release
@@ -48,7 +48,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      # 📦 لینک دانلود پایدار در Releases
+      # انتشار در GitHub Releases
       - name: Publish GitHub Release
         uses: ncipollo/release-action@v1
         with:
