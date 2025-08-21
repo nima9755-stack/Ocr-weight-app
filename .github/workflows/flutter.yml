@@ -19,17 +19,18 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # نسخه سازگار با pubspec (Dart < 3)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: '3.7.12'
 
+      # اطمینان از وجود پوشه‌های android/ و ios/
       - name: Ensure Android/iOS folders exist
         run: |
-          if [ ! -d "android" ]; then
-            flutter create .
-          fi
+          rm -rf android ios
+          flutter create -t app .
 
       - name: Get packages
         run: flutter pub get
@@ -37,6 +38,7 @@ jobs:
       - name: Build APK (release)
         run: flutter build apk --release
 
+      # 📦 ذخیره‌ی APK در artifact
       - name: Upload artifact (Actions)
         uses: actions/upload-artifact@v4
         with:
@@ -45,6 +47,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      # 📌 انتشار در بخش Releases
       - name: Publish GitHub Release
         uses: ncipollo/release-action@v1
         with:
